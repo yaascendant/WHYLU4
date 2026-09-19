@@ -38,8 +38,8 @@ async def inline_random_phrase(inline_query: types.InlineQuery):
     
     item = InlineQueryResultArticle(
         id=result_id,
-        title="🤖 Выплюнуть случайную фразу",
-        description=f"Нажмите для отправки: {random_phrase[:30]}...",
+        title="Когда на луче....?",
+        description=f"Когда же?",
         input_message_content=InputTextMessageContent(message_text=random_phrase)
     )
     await inline_query.answer([item], cache_time=0)
