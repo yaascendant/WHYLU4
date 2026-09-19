@@ -3,13 +3,15 @@ import random
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import InlineQueryResultArticle, InputTextMessageContent
 import hashlib
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import threading
 
-# 1. Токен, который вы получили от @BotFather
+# 1. ТОКЕН БОТА
 API_TOKEN = '8526804122:AAFQax87qejjYpf0LdoCKzfC_IglRdd0i04'
 
-# 2. Ваш заготовленный список фраз
+# 2. СПИСОК ФРАЗ
 PHRASES = [
-    "Когда апнут саммонеров?",
+  "Когда апнут саммонеров?",
     "Когда апнут луков?",
     "Когда ножи перестанут убивать магов с одного бэкстаба?",
     "Когда сделают новый чат?",
@@ -24,36 +26,41 @@ PHRASES = [
     "Когда сделают некст таргет?",
     "Когда апнут варлордов?",
     "Когда Кельта перестанет болотить?"
-  
-  
 ]
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# Хэндлер, который ловит инлайн-запросы
 @dp.inline_query()
 async def inline_random_phrase(inline_query: types.InlineQuery):
-    # Выбираем одну случайную фразу из списка
     random_phrase = random.choice(PHRASES)
-    
-    # Генерируем уникальный ID для результата (требование Telegram API)
     result_id = hashlib.md5(random_phrase.encode()).hexdigest()
     
-    # Формируем элемент инлайн-меню
     item = InlineQueryResultArticle(
         id=result_id,
         title="🤖 Выплюнуть случайную фразу",
-        description=f"Нажмите, чтобы отправить: {random_phrase[:30]}...",
-        input_message_content=InputTextMessageContent(
-            message_text=random_phrase
-        )
+        description=f"Нажмите для отправки: {random_phrase[:30]}...",
+        input_message_content=InputTextMessageContent(message_text=random_phrase)
     )
-    
-    # Отправляем ответ Telegram (cache_time=0 отключает кэширование, чтобы при каждом открытии фраза менялась)
     await inline_query.answer([item], cache_time=0)
 
+# --- ЖИЗНЕННО НЕОБХОДИМЫЙ КОСТЫЛЬ ДЛЯ БЕСПЛАТНОГО RENDER ---
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is alive!")
+
+def run_fake_server():
+    # Render по умолчанию выдает порт 10000 для Web Service
+    server = HTTPServer(('0.0.0.0', 10000), SimpleHTTPRequestHandler)
+    server.serve_forever()
+# -----------------------------------------------------------
+
 async def main():
+    # Запускаем фальшивый сервер в фоновом потоке
+    threading.Thread(target=run_fake_server, daemon=True).start()
+    
     print("Бот запущен и готов плеваться фразами!")
     await dp.start_polling(bot)
 
